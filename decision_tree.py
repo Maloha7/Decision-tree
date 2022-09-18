@@ -111,7 +111,7 @@ def calculate_information_gain_of_feature(data, column_index, split='mean'):
 
     information_gain = calculate_impurity(data, "entropy") - information
 
-    obj = {
+    split_info = {
         "information_gain": information_gain,
         "split_value": split_value,
         "split_index": column_index,
@@ -119,7 +119,7 @@ def calculate_information_gain_of_feature(data, column_index, split='mean'):
         "below_split": below_split
     }
 
-    return obj
+    return split_info
 
 def get_feature_with_highest_information_gain(data, split='mean'):
     information_gains = []
