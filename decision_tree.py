@@ -1,38 +1,27 @@
 import numpy as np
 import pandas as pd
 import math
+import time
 
 class DecisionTree:
     def __init__(self):
-        self.root = Node()
+        self.tree = Node()
 
     def learn(self, X, y, impurity_measure='entropy'):
-        unique_labels_in_y = set(y)
-        df = pd.concat([X, y], axis=1)
+        build_tree(X, y, impurity_measure, self.tree)
 
-        if len(unique_labels_in_y) == 1:
-            return Node(y[0])
-        elif has_identical_feature_values(X):
-            majority_label = get_majority_label(df)
-            return Node(majority_label)
+    def predict(self, x):
+        return get_prediction_label(x, self.tree)
 
-        else:
-            obj = get_feature_with_highest_information_gain(df)
-
-
-            # self.root.add_left(self.root, obj["below_split"], obj["split_value"], obj["split_index"])
-            # self.root.add_left(self.root, obj["above_split"], obj["split_value"], obj["split_index"])
-
-    def predict(x):
-        ...
-
-
-class Node:
-    def __init__(self, parent_node=None, data=None, split_value=None, split_index=None):
-        self.parent_node = parent_node
-        self.data = data
+class Data:
+    def __init__(self, split_value, split_index):
         self.split_value = split_value
         self.split_index = split_index
+
+class Node:
+    def __init__(self, label=None, data=None):
+        self.label = label
+        self.data = data
         self.left = None
         self.right = None
 
@@ -54,7 +43,33 @@ class Node:
             raise Exception('Right node already has a child')
 
 
+def get_prediction_label(x, node):
+    if node.is_leaf():
+        return node.label
+    elif x[node.data.split_index] < node.data.split_value:
+        return get_prediction_label(x, node.left)
+    else:
+        return get_prediction_label(x, node.right)
 
+def build_tree(X, y, impurity_measure, node):
+    unique_labels_in_y = set(y)
+    df = pd.concat([X, y], axis=1)
+
+    if len(unique_labels_in_y) == 1:
+        node.label = y.iloc[0]
+        return
+    elif has_identical_feature_values(X):
+        node.label = get_majority_label(df)
+        return
+    else:
+        split_info = get_feature_with_highest_information_gain(df)
+
+        node.data = Data(split_info['split_value'], split_info['split_index'])
+        node.left = Node()
+        node.right = Node()
+
+        build_tree(split_info['below_split'].iloc[:, :-1], split_info['below_split'].iloc[:, -1], impurity_measure, node.left)
+        build_tree(split_info['above_split'].iloc[:, :-1], split_info['above_split'].iloc[:, -1], impurity_measure, node.right)
 
 
 def calculate_impurity(data, impurity_measure):
@@ -132,4 +147,14 @@ def get_majority_label(df):
     value_counts = df.iloc[:, -1].value_counts()
     return value_counts.sort_values(ascending=False).keys()[0]
 
+data = pd.read_csv('magic04.data', header=None)
+dt = DecisionTree()
+
+X = data.iloc[:, :-1]
+y = data.iloc[:, -1]
+
+start = time.time()
+dt.learn(X, y)
+end = time.time()
+print('Time to train: ', (end - start))
 
