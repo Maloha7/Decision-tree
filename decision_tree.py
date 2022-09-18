@@ -62,7 +62,7 @@ def build_tree(X, y, impurity_measure, node):
         node.label = get_majority_label(df)
         return
     else:
-        split_info = get_feature_with_highest_information_gain(df)
+        split_info = get_feature_with_highest_information_gain(df, impurity_measure)
 
         node.data = Data(split_info['split_value'], split_info['split_index'])
         node.left = Node()
@@ -77,6 +77,7 @@ def calculate_impurity(data, impurity_measure):
 
     total_rows = len(data)
     total_entropy = 0
+    total_gini = 0
     for label in labels:
         number_of_rows_with_current_label = len(data.loc[data.iloc[:, -1] == label])
         prob_current_label = number_of_rows_with_current_label/total_rows
@@ -86,13 +87,13 @@ def calculate_impurity(data, impurity_measure):
             total_entropy += entropy_of_current_label
 
         if impurity_measure == "gini":
-            entropy_of_current_label = 1 - (prob_current_label**2)
-            total_entropy += entropy_of_current_label
+            gini_of_current_label = 1 - (prob_current_label**2)
+            total_gini += gini_of_current_label
 
 
     return total_entropy
 
-def calculate_information_gain_of_feature(data, column_index, split='mean'):
+def calculate_information_gain_of_feature(data, column_index, split, impurity_measure):
     split_value = 0
     if split == 'mean':
         split_value = data.iloc[:, column_index].mean()
@@ -104,8 +105,8 @@ def calculate_information_gain_of_feature(data, column_index, split='mean'):
     above_split = data.loc[data.iloc[:, column_index] >= split_value]
     below_split = data.loc[data.iloc[:, column_index] < split_value]
 
-    entropy_above_split = calculate_impurity(above_split, "entropy")
-    entropy_below_split = calculate_impurity(below_split, "entropy")
+    impurity_above_split = calculate_impurity(above_split, impurity_measure=impurity_measure)
+    impurity_below_split = calculate_impurity(below_split, impurity_measure=impurity_measure)
 
     information = len(above_split)/len(data) * entropy_above_split + len(below_split)/len(data) * entropy_below_split
 
@@ -121,10 +122,10 @@ def calculate_information_gain_of_feature(data, column_index, split='mean'):
 
     return split_info
 
-def get_feature_with_highest_information_gain(data, split='mean'):
+def get_feature_with_highest_information_gain(data, impurity_measure, split='mean'):
     information_gains = []
     for i in range(data.shape[1] - 1):
-        information_gains.append(calculate_information_gain_of_feature(data, i))
+        information_gains.append(calculate_information_gain_of_feature(data, i, impurity_measure=impurity_measure))
 
     obj_with_highest_information_gain = information_gains[0]
     for i in range(1, len(information_gains)):
@@ -157,4 +158,3 @@ start = time.time()
 dt.learn(X, y)
 end = time.time()
 print('Time to train: ', (end - start))
-
