@@ -99,7 +99,7 @@ def calculate_impurity(data, impurity_measure):
             total_entropy += entropy_of_current_label
 
         if impurity_measure == "gini":
-            gini_of_current_label = 1 - (prob_current_label ** 2)
+            gini_of_current_label = (prob_current_label)*(1 - prob_current_label)
             total_gini += gini_of_current_label
 
     return total_entropy
