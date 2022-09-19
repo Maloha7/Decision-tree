@@ -3,7 +3,8 @@ import pandas as pd
 import math
 import time
 from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
 
 class DecisionTree:
     def __init__(self):
@@ -25,9 +26,10 @@ class DecisionTree:
 
 
 class Data:
-    def __init__(self, split_value, split_index):
+    def __init__(self, split_value, split_index, majority_label):
         self.split_value = split_value
         self.split_index = split_index
+        self.majority_label = majority_label
 
 
 class Node:
@@ -53,9 +55,7 @@ def get_prediction_label(x, node):
 
 
 def prune(X, y, node):
-    if node.is_leaf():
-        ...
-
+    ...
 
 def build_tree(X, y, impurity_measure, node):
     unique_labels_in_y = set(y)
@@ -70,7 +70,7 @@ def build_tree(X, y, impurity_measure, node):
     else:
         split_info = get_feature_with_highest_information_gain(df, impurity_measure)
 
-        node.data = Data(split_info['split_value'], split_info['split_index'])
+        node.data = Data(split_info['split_value'], split_info['split_index'], get_majority_label(df))
         node.left = Node()
         node.right = Node()
 
@@ -166,7 +166,7 @@ def get_majority_label(df):
     return value_counts.sort_values(ascending=False).keys()[0]
 
 
-data = pd.read_csv('magic04.data', header=None)
+data = pd.read_csv('testData.csv', header=None)
 dt = DecisionTree()
 
 X = data.iloc[:, :-1]
@@ -176,3 +176,13 @@ start = time.time()
 dt.learn(X, y)
 end = time.time()
 print('Time to train: ', (end - start))
+
+preds = dt.predict(X_val)
+from sklearn.metrics import accuracy_score
+accuracy_score(y_val, preds)
+from sklearn.tree import DecisionTreeClassifier
+clf = DecisionTreeClassifier(random_state=0)
+
+clf.fit(X_train, y_train)
+preds = clf.predict(X_val)
+accuracy_score(y_val, preds)
