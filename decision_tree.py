@@ -3,7 +3,8 @@ import pandas as pd
 import math
 import time
 from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
 
 
 class DecisionTree:
@@ -25,11 +26,11 @@ class DecisionTree:
         return predictions
 
 
-
 class Data:
-    def __init__(self, split_value, split_index):
+    def __init__(self, split_value, split_index, majority_label):
         self.split_value = split_value
         self.split_index = split_index
+        self.majority_label = majority_label
 
 
 class Node:
@@ -54,11 +55,8 @@ def get_prediction_label(x, node):
         return get_prediction_label(x, node.right)
 
 
-
 def prune(X, y, node):
-    if node.is_leaf():
-        ...
-
+    ...
 
 
 def build_tree(X, y, impurity_measure, node):
@@ -74,10 +72,9 @@ def build_tree(X, y, impurity_measure, node):
     else:
         split_info = get_feature_with_highest_information_gain(df, impurity_measure)
 
-        node.data = Data(split_info['split_value'], split_info['split_index'])
+        node.data = Data(split_info['split_value'], split_info['split_index'], get_majority_label(df))
         node.left = Node()
         node.right = Node()
-
 
         X_below = split_info['below_split'].iloc[:, :-1]
         y_below = split_info['below_split'].iloc[:, -1]
@@ -87,7 +84,6 @@ def build_tree(X, y, impurity_measure, node):
 
         build_tree(X_below, y_below, impurity_measure, node.left)
         build_tree(X_above, y_above, impurity_measure, node.right)
-
 
 
 def calculate_impurity(data, impurity_measure):
@@ -126,10 +122,8 @@ def calculate_information_gain_of_feature(data, column_index, split, impurity_me
     impurity_above_split = calculate_impurity(above_split, impurity_measure=impurity_measure)
     impurity_below_split = calculate_impurity(below_split, impurity_measure=impurity_measure)
 
-
     information = len(above_split) / len(data) * impurity_above_split + len(below_split) / len(
         data) * impurity_below_split
-
 
     information_gain = calculate_impurity(data, "entropy") - information
 
@@ -174,7 +168,7 @@ def get_majority_label(df):
     return value_counts.sort_values(ascending=False).keys()[0]
 
 
-data = pd.read_csv('magic04.data', header=None)
+data = pd.read_csv('testData.csv', header=None)
 dt = DecisionTree()
 
 X = data.iloc[:, :-1]
@@ -184,3 +178,13 @@ start = time.time()
 dt.learn(X, y)
 end = time.time()
 print('Time to train: ', (end - start))
+
+preds = dt.predict(X_val)
+from sklearn.metrics import accuracy_score
+accuracy_score(y_val, preds)
+from sklearn.tree import DecisionTreeClassifier
+clf = DecisionTreeClassifier(random_state=0)
+
+clf.fit(X_train, y_train)
+preds = clf.predict(X_val)
+accuracy_score(y_val, preds)
