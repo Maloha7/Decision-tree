@@ -5,7 +5,6 @@ import time
 from sklearn.model_selection import train_test_split
 
 
-
 class DecisionTree:
     def __init__(self):
         self.tree = Node()
@@ -23,7 +22,6 @@ class DecisionTree:
         for x in X:
             predictions.append(get_prediction_label(x, self.tree))
         return predictions
-
 
 
 class Data:
@@ -54,11 +52,9 @@ def get_prediction_label(x, node):
         return get_prediction_label(x, node.right)
 
 
-
 def prune(X, y, node):
     if node.is_leaf():
         ...
-
 
 
 def build_tree(X, y, impurity_measure, node):
@@ -78,7 +74,6 @@ def build_tree(X, y, impurity_measure, node):
         node.left = Node()
         node.right = Node()
 
-
         X_below = split_info['below_split'].iloc[:, :-1]
         y_below = split_info['below_split'].iloc[:, -1]
 
@@ -87,7 +82,6 @@ def build_tree(X, y, impurity_measure, node):
 
         build_tree(X_below, y_below, impurity_measure, node.left)
         build_tree(X_above, y_above, impurity_measure, node.right)
-
 
 
 def calculate_impurity(data, impurity_measure):
@@ -126,10 +120,8 @@ def calculate_information_gain_of_feature(data, column_index, split, impurity_me
     impurity_above_split = calculate_impurity(above_split, impurity_measure=impurity_measure)
     impurity_below_split = calculate_impurity(below_split, impurity_measure=impurity_measure)
 
-
     information = len(above_split) / len(data) * impurity_above_split + len(below_split) / len(
         data) * impurity_below_split
-
 
     information_gain = calculate_impurity(data, "entropy") - information
 
