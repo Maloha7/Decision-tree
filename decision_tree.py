@@ -55,7 +55,8 @@ def get_prediction_label(x, node):
 
 
 def prune(X, y, node):
-    ...
+    return True
+
 
 def build_tree(X, y, impurity_measure, node):
     unique_labels_in_y = set(y)
