@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 
+
 class DecisionTree:
     def __init__(self):
         self.tree = Node()
@@ -14,13 +15,15 @@ class DecisionTree:
         if pruning:
             X_train, X_prune, y_train, y_prune = train_test_split(X, y, test_size=0.25, random_state=42)
             build_tree(X_train, y_train, impurity_measure, self.tree)
+            prune(X_prune, y_prune, self.tree)
 
         else:
             build_tree(X, y, impurity_measure, self.tree)
 
     def predict(self, X):
         predictions = []
-        for x in X:
+        for i in range(len(X)):
+            x = X.iloc[i, :]
             predictions.append(get_prediction_label(x, self.tree))
         return predictions
 
@@ -55,8 +58,26 @@ def get_prediction_label(x, node):
 
 
 def prune(X, y, node):
-    return True
+    if node.is_leaf():
+        return accuracy_score(y, np.full(len(y), node.label))
+    dataset = pd.concat([X, y], axis=1)
+    above_split, below_split = split_dataset(dataset, node.data.split_index, node.data.split_value)
 
+    X_below = below_split.iloc[:, :-1]
+    y_below = below_split.iloc[:, -1]
+    X_above = above_split.iloc[:, :-1]
+    y_above = above_split.iloc[:, -1]
+
+    accuracy_left_node = prune(X_below, y_below, node.left)
+    accuracy_right_node = prune(X_above, y_above, node.left)
+    accuracy_majority_label = accuracy_score(y, np.full(len(y), node.data.majority_label))
+
+    if accuracy_majority_label >= accuracy_left_node + accuracy_right_node:
+        node.label = node.data.majority_label
+        node.left = None
+        node.right = None
+        return accuracy_majority_label
+    return accuracy_left_node + accuracy_right_node
 
 def build_tree(X, y, impurity_measure, node):
     unique_labels_in_y = set(y)
@@ -100,10 +121,16 @@ def calculate_impurity(data, impurity_measure):
             total_entropy += entropy_of_current_label
 
         if impurity_measure == "gini":
-            gini_of_current_label = (prob_current_label)*(1 - prob_current_label)
+            gini_of_current_label = (prob_current_label) * (1 - prob_current_label)
             total_gini += gini_of_current_label
 
     return total_entropy
+
+
+def split_dataset(data, column_index, split_value):
+    above_split = data.loc[data.iloc[:, column_index] >= split_value]
+    below_split = data.loc[data.iloc[:, column_index] < split_value]
+    return above_split, below_split
 
 
 def calculate_information_gain_of_feature(data, column_index, split, impurity_measure):
@@ -115,8 +142,7 @@ def calculate_information_gain_of_feature(data, column_index, split, impurity_me
     else:
         raise Exception('Split mode not recognized')
 
-    above_split = data.loc[data.iloc[:, column_index] >= split_value]
-    below_split = data.loc[data.iloc[:, column_index] < split_value]
+    above_split, below_split = split_dataset(data, column_index, split_value)
 
     impurity_above_split = calculate_impurity(above_split, impurity_measure=impurity_measure)
     impurity_below_split = calculate_impurity(below_split, impurity_measure=impurity_measure)
@@ -167,23 +193,38 @@ def get_majority_label(df):
     return value_counts.sort_values(ascending=False).keys()[0]
 
 
-data = pd.read_csv('testData.csv', header=None)
+data = pd.read_csv('magic04.data', header=None)
 dt = DecisionTree()
 
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
+X_train, X_val_test, y_train, y_val_test = train_test_split(X, y, test_size=0.4, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=42)
+
 start = time.time()
-dt.learn(X, y)
+dt.learn(X, y, pruning=True)
 end = time.time()
 print('Time to train: ', (end - start))
 
-preds = dt.predict(X_val)
-from sklearn.metrics import accuracy_score
-accuracy_score(y_val, preds)
-from sklearn.tree import DecisionTreeClassifier
-clf = DecisionTreeClassifier(random_state=0)
 
-clf.fit(X_train, y_train)
-preds = clf.predict(X_val)
-accuracy_score(y_val, preds)
+preds = dt.predict(X_train)
+print(accuracy_score(y_train, preds))
+
+dt.learn(X, y, pruning=False)
+preds = dt.predict(X_train)
+print(accuracy_score(y_train, preds))
+
+# preds = dt.predict(X_val)
+# from sklearn.metrics import accuracy_score
+#
+# accuracy_score(y_val, preds)
+# from sklearn.tree import DecisionTreeClassifier
+#
+# clf = DecisionTreeClassifier(random_state=0)
+#
+# clf.fit(X_train, y_train)
+# preds = clf.predict(X_val)
+# accuracy_score(y_val, preds)
+
+#%%
