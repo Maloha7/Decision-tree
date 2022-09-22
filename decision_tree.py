@@ -30,20 +30,22 @@ class DecisionTree:
             predictions.append(get_prediction_label(x, self.tree))
         return predictions
 
+
 def get_prediction_label(x, node):
-    #Return label when a leaf is reached
+    # Return label when a leaf is reached
     if node.is_leaf():
         return node.label
-    #Otherwise traverse the tree
+    # Otherwise traverse the tree
     elif x[node.data.split_index] < node.data.split_value:
         return get_prediction_label(x, node.left)
     else:
         return get_prediction_label(x, node.right)
 
+
 def prune(X, y, node):
     if node.is_leaf():
         return len(y) - y.count()
-    #If no datapoints below/above split return 0 label errors
+    # If no datapoints below/above split return 0 label errors
     if X.empty:
         return 0
 
@@ -65,6 +67,7 @@ def prune(X, y, node):
         node.right = None
         return accuracy_majority_label
     return accuracy_left_node + accuracy_right_node
+
 
 def build_tree(X, y, impurity_measure, node):
     unique_labels_in_y = set(y)
@@ -92,28 +95,23 @@ def build_tree(X, y, impurity_measure, node):
         build_tree(X_below, y_below, impurity_measure, node.left)
         build_tree(X_above, y_above, impurity_measure, node.right)
 
+
 def calculate_impurity(data, impurity_measure):
-    labels = data.iloc[:, -1].unique()
+    _, labels = np.unique(data, return_counts=True)
+    prob_current_label = labels / np.sum(labels)
 
-    total_rows = len(data)
-    total_impurity = 0
-    for label in labels:
-        number_of_rows_with_current_label = len(data.loc[data.iloc[:, -1] == label])
-        prob_current_label = number_of_rows_with_current_label / total_rows
+    if impurity_measure == 'entropy':
+        return -1 * np.sum(prob_current_label * np.log2(prob_current_label))
 
-        if impurity_measure == "entropy":
-            entropy_of_current_label = - prob_current_label * math.log2(prob_current_label)
-            total_impurity += entropy_of_current_label
+    if impurity_measure == 'gini':
+        return 1 - np.sum(prob_current_label ** 2)
 
-        if impurity_measure == "gini":
-            gini_of_current_label = (prob_current_label) * (1 - prob_current_label)
-            total_impurity += gini_of_current_label
-    return total_impurity
 
 def split_dataset(data, column_index, split_value):
     above_split = data.loc[data.iloc[:, column_index] >= split_value]
     below_split = data.loc[data.iloc[:, column_index] < split_value]
     return above_split, below_split
+
 
 def calculate_information_gain_of_feature(data, column_index, split, impurity_measure):
     split_value = 0
@@ -144,6 +142,7 @@ def calculate_information_gain_of_feature(data, column_index, split, impurity_me
 
     return split_info
 
+
 def get_feature_with_highest_information_gain(data, impurity_measure, split='mean'):
     information_gains = []
     for i in range(data.shape[1] - 1):
@@ -157,28 +156,32 @@ def get_feature_with_highest_information_gain(data, impurity_measure, split='mea
 
     return obj_with_highest_information_gain
 
+
 def has_identical_feature_values(X):
-    #Finds firs row
+    # Finds firs row
     first = X.iloc[0, :]
 
-    #Creates a new boolean dataframe based on which rows in X are equal to the first row
+    # Creates a new boolean dataframe based on which rows in X are equal to the first row
     df = X == first
 
-    #Returns true if all values in df are true; False otherwise
+    # Returns true if all values in df are true; False otherwise
     return df.all().all()
 
+
 def get_majority_label(df):
-    #Get counts for each label
+    # Get counts for each label
     value_counts = df.iloc[:, -1].value_counts()
 
-    #Sort in descending order and return the largest count
+    # Sort in descending order and return the largest count
     return value_counts.sort_values(ascending=False).keys()[0]
+
 
 class Data:
     def __init__(self, split_value, split_index, majority_label):
         self.split_value = split_value
         self.split_index = split_index
         self.majority_label = majority_label
+
 
 class Node:
     def __init__(self, label=None, data=None):
@@ -199,18 +202,19 @@ class Node:
             return 'Split index ' + str(self.data.split_index) + '\nSplit value ' + str(
                 self.data.split_value) + '\nMajority label ' + str(self.data.majority_label)
 
-#Reading the data
+
+# Reading the data
 data = pd.read_csv('magic04.data', header=None)
 
-#Splitting data into X and y
+# Splitting data into X and y
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
-#Splitting data into X_train, y_train, X_val, y_val, X_test, y_test
+# Splitting data into X_train, y_train, X_val, y_val, X_test, y_test
 X_train, X_val_test, y_train, y_val_test = train_test_split(X, y, test_size=0.4, random_state=42)
 X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=42)
 
-#Training
+# Training
 models = []
 
 decision_tree_entropy = DecisionTree()
