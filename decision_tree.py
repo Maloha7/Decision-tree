@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 
+
 class DecisionTree:
     def __init__(self):
         self.tree = Node()
@@ -100,7 +101,7 @@ def calculate_impurity(data, impurity_measure):
             total_entropy += entropy_of_current_label
 
         if impurity_measure == "gini":
-            gini_of_current_label = (prob_current_label)*(1 - prob_current_label)
+            gini_of_current_label = (prob_current_label) * (1 - prob_current_label)
             total_gini += gini_of_current_label
 
     return total_entropy
@@ -180,8 +181,10 @@ print('Time to train: ', (end - start))
 
 preds = dt.predict(X_val)
 from sklearn.metrics import accuracy_score
+
 accuracy_score(y_val, preds)
 from sklearn.tree import DecisionTreeClassifier
+
 clf = DecisionTreeClassifier(random_state=0)
 
 clf.fit(X_train, y_train)
