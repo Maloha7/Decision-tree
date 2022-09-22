@@ -43,6 +43,7 @@ def get_prediction_label(x, node):
 
 
 def prune(X, y, node):
+    # TODO
     if node.is_leaf():
         return len(y) - y.count()
     # If no datapoints below/above split return 0 label errors
@@ -58,10 +59,12 @@ def prune(X, y, node):
     y_above = above_split.iloc[:, -1]
 
     accuracy_left_node = prune(X_below, y_below, node.left)
-    accuracy_right_node = prune(X_above, y_above, node.left)
-    accuracy_majority_label = len(y) - y.value_counts()[node.data.majority_label]
+    accuracy_right_node = prune(X_above, y_above, node.right)
+    #accuracy_majority_label = len(y) - y.value_counts()[node.data.majority_label]
+    #TODO:
+    accuracy_majority_label = len(y) - y.count()
 
-    if accuracy_majority_label <= accuracy_left_node + accuracy_right_node:
+    if accuracy_majority_label < accuracy_left_node + accuracy_right_node:
         node.label = node.data.majority_label
         node.left = None
         node.right = None
@@ -97,7 +100,8 @@ def build_tree(X, y, impurity_measure, node):
 
 
 def calculate_impurity(data, impurity_measure):
-    _, labels = np.unique(data, return_counts=True)
+    y = data.iloc[:, -1]
+    _, labels = np.unique(y, return_counts=True)
     prob_current_label = labels / np.sum(labels)
 
     if impurity_measure == 'entropy':
@@ -233,10 +237,32 @@ decision_tree_gini_pruning = DecisionTree()
 decision_tree_gini_pruning.learn(X_train, y_train, impurity_measure='gini', pruning=True)
 models.append(decision_tree_gini_pruning)
 
-# #Evaluation
 
+#Model selection
+val_accuracies = []
 for model in models:
     print('Decision tree ', model.impurity_measure, "Pruning" if model.pruning else '')
     print("Training accuracy: ", accuracy_score(y_train, model.predict(X_train)))
-    print("Validation accuracy: ", accuracy_score(y_val, model.predict(X_val)))
+    val_acc = accuracy_score(y_val, model.predict(X_val))
+    val_accuracies.append(val_acc)
+    print("Validation accuracy: ", val_acc)
     print()
+
+best_model = models[list.index(val_accuracies, max(val_accuracies))]
+
+#Model evaluation
+print("Model evaluation")
+test_pred = best_model.predict(X_test)
+print("Best model's accuracy on test data: ", accuracy_score(y_test, test_pred))
+print()
+
+
+#Comparing to existing implementation
+sk_learn_decision_tree = DecisionTreeClassifier(random_state=42, criterion=str(best_model.impurity_measure))
+sk_learn_decision_tree.fit(X_train, y_train)
+val_pred = sk_learn_decision_tree.predict(X_val)
+test_pred = sk_learn_decision_tree.predict(X_test)
+
+print("Sklearn's descision tree classiffier: ")
+print("Validation accuracy: ", accuracy_score(y_val, sk_learn_decision_tree.predict(X_val)))
+print("Test accuracy: ", accuracy_score(y_test, sk_learn_decision_tree.predict(X_test)))
