@@ -15,7 +15,7 @@ class DecisionTree:
     Fits the decision tree to data provided
     Arguments:
         X: A pandas dataframe containing all features in a dataset
-        y: A pandas dataframe containing all labels in a dataset
+        y: A pandas series containing all labels in a dataset
         impurity_measure: A String. Can either be entropy or gini
         pruning: Boolean. If true: reduced error pruning will be performed
     Returns:
@@ -56,10 +56,10 @@ class DecisionTree:
 """
 Predicts label for a given row x
 Arguments:
-    x: A pandas series 
+    x: A pandas series containing a row in a dataset
     node: a Node (the current node). This node is used to perform the method recursively
 Returns:
-    Predicted label
+    String - Predicted label
 """
 def get_prediction_label(x, node):
     # Return label when a leaf is reached
@@ -71,7 +71,15 @@ def get_prediction_label(x, node):
     else:
         return get_prediction_label(x, node.right)
 
-
+"""
+Function to perform reduced error pruning
+Arguments:
+    X: A pandas dataframe containing the features in a dataset
+    y: A pandas series containing the labels in a dataset
+    node: a Node (the current node). This node is used to perform the method recursively
+Returns:
+    int - Label error. This result is used in the function callbacks
+"""
 def prune(X, y, node):
     if node.is_leaf():
         #Returns amount of label errors
@@ -105,7 +113,16 @@ def prune(X, y, node):
         return label_errors_majority_label
     return label_errors_left_node + label_errors_right_node
 
-
+'''
+Fits the decision tree to data provided
+Arguments:
+    X: A pandas dataframe containing all features in a dataset
+    y: A pandas series containing all labels in a dataset
+    impurity_measure: A String. Can either be entropy or gini
+    node: a Node (the current node). This node is used to perform the method recursively
+Returns:
+    Nothing
+'''
 def create_tree(X, y, impurity_measure, node):
     df = pd.concat([X, y], axis=1)
 
@@ -137,7 +154,14 @@ def create_tree(X, y, impurity_measure, node):
         create_tree(X_below, y_below, impurity_measure, node.left)
         create_tree(X_above, y_above, impurity_measure, node.right)
 
-
+'''
+Calculates impurity
+Arguments:
+    data: a pandas dataframe containing both features and labels
+    impurity_measure: A String. Can either be entropy or gini
+Returns:
+    float: impurity
+'''
 def calculate_impurity(data, impurity_measure):
     y = data.iloc[:, -1]
     _, labels = np.unique(y, return_counts=True)
@@ -149,13 +173,36 @@ def calculate_impurity(data, impurity_measure):
     if impurity_measure == 'gini':
         return 1 - np.sum(prob_current_label ** 2)
 
-
+'''
+Splits a dataset based on the value of a given index and a given value
+Argements:
+    data: a pandas dataframe containing both features and labels
+    column_index: int - The index of the column index to split on
+    split_value: float - The value to split on
+Returns:
+    above_split: a pandas dataframe containing the rows above the split
+    below_split: a pandas dataframe containing the rows below the split
+'''
 def split_dataset(data, column_index, split_value):
     above_split = data.loc[data.iloc[:, column_index] >= split_value]
     below_split = data.loc[data.iloc[:, column_index] < split_value]
     return above_split, below_split
 
-
+'''
+Calculates the information gain from a feature
+Arguments:
+    data: a pandas dataframe containing both features and labels
+    column_index: int - The index of the column index to split on
+    split: float - The value to split on
+    impurity_measure: A String. Can either be entropy or gini
+Returns:
+    split_info: A dictionary - 
+        "information_gain": information_gain, float
+        "split_value": split_value, float
+        "split_index": column_index, int
+        "above_split": above_split, pandas dataframe
+        "below_split": below_split pandas dataframe
+'''
 def calculate_information_gain_of_feature(data, column_index, split, impurity_measure):
     split_value = 0
     if split == 'mean':
@@ -185,7 +232,19 @@ def calculate_information_gain_of_feature(data, column_index, split, impurity_me
 
     return split_info
 
-
+'''
+Finds which feature gives the highest information gain as well as the features index and split value
+Arguments:
+    data: a pandas dataframe containing both features and labels
+    impurity_measure: A String. Can either be entropy or gini
+Returns:
+    features_with_highest_information_gain: A dictionary - 
+        "information_gain": information_gain, float
+        "split_value": split_value, float
+        "split_index": column_index, int
+        "above_split": above_split, pandas dataframe
+        "below_split": below_split pandas dataframe
+'''
 def get_feature_with_highest_information_gain(data, impurity_measure, split='mean'):
     information_gains = []
     for i in range(data.shape[1] - 1):
@@ -199,7 +258,13 @@ def get_feature_with_highest_information_gain(data, impurity_measure, split='mea
 
     return feauture_with_highest_information_gain
 
-
+'''
+Checks if all the rows in a dataframe are equal
+Arguments:
+    X: a pandas dataframe containing the features of a dataset
+Returns:
+    Boolean: True if all rows in the dataframe are equal; False otherwise
+'''
 def has_identical_feature_values(X):
     # Finds firs row
     first = X.iloc[0, :]
@@ -210,10 +275,16 @@ def has_identical_feature_values(X):
     # Returns true if all values in df are true; False otherwise
     return df.all().all()
 
-
-def get_majority_label(df):
+'''
+Finds the majority label in a dataset
+Arguments:
+    data: a pandas dataframe
+Returns:
+    String: the majority label
+'''
+def get_majority_label(data):
     # Get counts for each label
-    value_counts = df.iloc[:, -1].value_counts()
+    value_counts = data.iloc[:, -1].value_counts()
 
     # Sort in descending order and return the largest count
     return value_counts.sort_values(ascending=False).keys()[0]
@@ -233,6 +304,11 @@ class Node:
         self.left = None
         self.right = None
 
+    '''
+    Checks if this node is a leaf
+    Returns:
+        Boolean: True if node is leaf; False otherwise
+    '''
     def is_leaf(self):
         if self.left is None and self.right is None:
             return True
