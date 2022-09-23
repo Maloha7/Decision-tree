@@ -17,11 +17,11 @@ class DecisionTree:
 
         if self.pruning:
             X_train, X_prune, y_train, y_prune = train_test_split(X, y, test_size=0.25, random_state=42)
-            build_tree(X_train, y_train, impurity_measure, self.tree)
+            create_tree(X_train, y_train, impurity_measure, self.tree)
             prune(X_prune, y_prune, self.tree)
 
         else:
-            build_tree(X, y, impurity_measure, self.tree)
+            create_tree(X, y, impurity_measure, self.tree)
 
     def predict(self, X):
         predictions = []
@@ -43,9 +43,9 @@ def get_prediction_label(x, node):
 
 
 def prune(X, y, node):
-    # TODO
     if node.is_leaf():
-        return len(y) - y.count()
+        return len(y) - y.tolist().count(node.label)
+
     # If no datapoints below/above split return 0 label errors
     if X.empty:
         return 0
@@ -60,11 +60,9 @@ def prune(X, y, node):
 
     accuracy_left_node = prune(X_below, y_below, node.left)
     accuracy_right_node = prune(X_above, y_above, node.right)
-    #accuracy_majority_label = len(y) - y.value_counts()[node.data.majority_label]
-    #TODO:
-    accuracy_majority_label = len(y) - y.count()
+    accuracy_majority_label = len(y) - y.tolist().count(node.data.majority_label)
 
-    if accuracy_majority_label < accuracy_left_node + accuracy_right_node:
+    if accuracy_majority_label <= accuracy_left_node + accuracy_right_node:
         node.label = node.data.majority_label
         node.left = None
         node.right = None
@@ -72,7 +70,7 @@ def prune(X, y, node):
     return accuracy_left_node + accuracy_right_node
 
 
-def build_tree(X, y, impurity_measure, node):
+def create_tree(X, y, impurity_measure, node):
     unique_labels_in_y = set(y)
     df = pd.concat([X, y], axis=1)
 
@@ -95,8 +93,8 @@ def build_tree(X, y, impurity_measure, node):
         X_above = split_info['above_split'].iloc[:, :-1]
         y_above = split_info['above_split'].iloc[:, -1]
 
-        build_tree(X_below, y_below, impurity_measure, node.left)
-        build_tree(X_above, y_above, impurity_measure, node.right)
+        create_tree(X_below, y_below, impurity_measure, node.left)
+        create_tree(X_above, y_above, impurity_measure, node.right)
 
 
 def calculate_impurity(data, impurity_measure):
@@ -241,7 +239,7 @@ models.append(decision_tree_gini_pruning)
 #Model selection
 val_accuracies = []
 for model in models:
-    print('Decision tree ', model.impurity_measure, "Pruning" if model.pruning else '')
+    print('Decision tree', model.impurity_measure, "Pruning" if model.pruning else '')
     print("Training accuracy: ", accuracy_score(y_train, model.predict(X_train)))
     val_acc = accuracy_score(y_val, model.predict(X_val))
     val_accuracies.append(val_acc)
