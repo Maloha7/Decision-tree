@@ -10,6 +10,8 @@ from sklearn.tree import DecisionTreeClassifier
 class DecisionTree:
     def __init__(self):
         self.tree = Node()
+    def __str__(self):
+        return "Decision tree using impurity measure= " + str(self.impurity_measure) + ' and with pruning' if self.pruning else ' without pruning'
 
     """
     Fits the decision tree to data provided
@@ -355,30 +357,68 @@ models.append(decision_tree_gini_pruning)
 
 
 #Model selection
+train_accuracies = []
 val_accuracies = []
+
 for model in models:
     print('Decision tree', model.impurity_measure, "Pruning" if model.pruning else '')
-    print("Training accuracy: ", accuracy_score(y_train, model.predict(X_train)))
+    train_acc = accuracy_score(y_train, model.predict(X_train))
+    train_accuracies.append(train_acc)
+    print("Training accuracy: ", train_acc)
     val_acc = accuracy_score(y_val, model.predict(X_val))
     val_accuracies.append(val_acc)
     print("Validation accuracy: ", val_acc)
     print()
 
-best_model = models[list.index(val_accuracies, max(val_accuracies))]
+best_model_index = list.index(val_accuracies, max(val_accuracies))
+best_model = models[best_model_index]
+best_model_train_acc = train_accuracies[best_model_index]
+best_model_val_acc = val_accuracies[best_model_index]
 
-#Model evaluation
-print("Model evaluation")
-test_pred = best_model.predict(X_test)
-print("Best model's accuracy on test data: ", accuracy_score(y_test, test_pred))
+print("Best model:")
+print(best_model)
+print("Training accuracy: ", best_model_train_acc)
+print("Validation accuracy: ", best_model_val_acc)
 print()
 
 
-#Comparing to existing implementation
-sk_learn_decision_tree = DecisionTreeClassifier(random_state=42, criterion=str(best_model.impurity_measure))
-sk_learn_decision_tree.fit(X_train, y_train)
-val_pred = sk_learn_decision_tree.predict(X_val)
-test_pred = sk_learn_decision_tree.predict(X_test)
+#Model evaluation
+print("Estimating the performance of the selected model on unseen data points")
+test_pred = best_model.predict(X_test)
+best_model_test_acc = accuracy_score(y_test, test_pred)
+print("Best model's accuracy on test data: ", best_model_test_acc)
+start = time.time()
+best_model.learn(X_train, y_train)
+end = time.time()
+best_model_time = end - start
+print("Time used to train model: ", best_model_time)
+print()
+print("------------------------------")
 
-print("Sklearn's descision tree classiffier: ")
-print("Validation accuracy: ", accuracy_score(y_val, sk_learn_decision_tree.predict(X_val)))
-print("Test accuracy: ", accuracy_score(y_test, sk_learn_decision_tree.predict(X_test)))
+
+#Comparing to existing implementation
+print("Comparison between existing implementation")
+sk_learn_decision_tree = DecisionTreeClassifier(random_state=42, criterion=str(best_model.impurity_measure))
+
+start = time.time()
+sk_learn_decision_tree.fit(X_train, y_train)
+end = time.time()
+sk_learn_time = end - start
+
+sk_learn_train_acc = accuracy_score(y_train, sk_learn_decision_tree.predict(X_train))
+sk_learn_val_acc = accuracy_score(y_val, sk_learn_decision_tree.predict(X_val))
+sk_learn_test_acc = accuracy_score(y_test, sk_learn_decision_tree.predict(X_test))
+
+print("Sklearn's descision tree classifier: ")
+print("Training accuracy: ", sk_learn_train_acc)
+print("Validation accuracy: ", sk_learn_val_acc)
+print("Test accuracy: ", sk_learn_test_acc)
+print("Time used to train model: ", sk_learn_time)
+print()
+
+print("Differance between best model and Sklearn's decision tree classifier:")
+print("Training accuracy: ", best_model_train_acc - sk_learn_train_acc)
+print("Validation accuracy: ", best_model_val_acc - sk_learn_val_acc)
+print("Test accuracy: ", best_model_test_acc - sk_learn_test_acc)
+print("Time used to train model: ", best_model_time - sk_learn_time)
+
