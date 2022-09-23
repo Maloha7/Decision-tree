@@ -416,9 +416,9 @@ print("Test accuracy: ", sk_learn_test_acc)
 print("Time used to train model: ", sk_learn_time)
 print()
 
-print("Differance between best model and Sklearn's decision tree classifier:")
+print("Difference between best model and Sklearn's decision tree classifier:")
 print("Training accuracy: ", best_model_train_acc - sk_learn_train_acc)
 print("Validation accuracy: ", best_model_val_acc - sk_learn_val_acc)
 print("Test accuracy: ", best_model_test_acc - sk_learn_test_acc)
-print("Time used to train model: ", best_model_time - sk_learn_time)
+print("Time difference: ", best_model_time - sk_learn_time)
 
